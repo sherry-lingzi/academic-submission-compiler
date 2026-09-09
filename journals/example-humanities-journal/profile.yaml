@@ -1,0 +1,148 @@
+profile_version: "1.0"
+journal:
+  id: example-humanities-journal
+  name: 虚构人文学刊测试刊
+  language: zh-CN
+  test_only: true
+document:
+  page_size: A4
+  margins:
+    top_mm: 25.4
+    bottom_mm: 25.4
+    left_mm: 31.7
+    right_mm: 31.7
+  text_color: "000000"
+  line_spacing: 1.5
+  provenance: &source
+    source: TEST_PROFILE.md
+    section: 虚构人文学刊测试投稿要求
+    evidence: 全文文字颜色为黑色；页边距上下 25.4 毫米、左右 31.7 毫米
+  confidence: explicit
+title:
+  font: {east_asia: 黑体, latin: Times New Roman}
+  size: {chinese_name: 二号, pt: 22}
+  bold: true
+  alignment: center
+  space_after_pt: 12
+  keep_with_next: true
+  provenance: {source: TEST_PROFILE.md, evidence: 论文标题采用二号黑体居中}
+  confidence: explicit
+authors:
+  font: {east_asia: 楷体, latin: Times New Roman}
+  size: {chinese_name: 四号, pt: 14}
+  alignment: center
+  provenance: {source: TEST_PROFILE.md, evidence: 作者使用四号楷体居中}
+  confidence: explicit
+affiliations:
+  font: {east_asia: 宋体, latin: Times New Roman}
+  size: {chinese_name: 小四, pt: 12}
+  alignment: center
+  space_after_pt: 10
+  provenance: {source: TEST_PROFILE.md, evidence: 单位使用小四号宋体居中}
+  confidence: explicit
+abstract:
+  font: {east_asia: 宋体, latin: Times New Roman}
+  size: {chinese_name: 五号, pt: 10.5}
+  alignment: justify
+  line_spacing: 1.25
+  provenance: {source: TEST_PROFILE.md, evidence: 中文摘要使用五号宋体，英文使用 Times New Roman}
+  confidence: explicit
+keywords:
+  font: {east_asia: 宋体, latin: Times New Roman}
+  size: {chinese_name: 五号, pt: 10.5}
+  alignment: left
+  space_after_pt: 8
+  provenance: {source: TEST_PROFILE.md, evidence: 关键词使用五号宋体}
+  confidence: explicit
+body:
+  font: {east_asia: 宋体, latin: Times New Roman}
+  size: {chinese_name: 小四, pt: 12}
+  alignment: justify
+  first_line_indent_chars: 2
+  line_spacing: 1.5
+  space_after_pt: 0
+  provenance: {source: TEST_PROFILE.md, evidence: 正文采用小四号宋体，英文和数字采用 Times New Roman，1.5 倍行距，两端对齐，首行缩进 2 字符}
+  confidence: explicit
+headings:
+  level1:
+    font: {east_asia: 黑体, latin: Times New Roman}
+    size: {chinese_name: 四号, pt: 14}
+    bold: true
+    alignment: center
+    keep_with_next: true
+    provenance: {source: TEST_PROFILE.md, evidence: 一级标题用四号黑体}
+    confidence: explicit
+  level2:
+    font: {east_asia: 黑体, latin: Times New Roman}
+    size: {chinese_name: 小四, pt: 12}
+    bold: true
+    alignment: left
+    keep_with_next: true
+    provenance: {source: TEST_PROFILE.md, evidence: 二级标题用小四号黑体}
+    confidence: explicit
+  level3:
+    font: {east_asia: 楷体, latin: Times New Roman}
+    size: {chinese_name: 小四, pt: 12}
+    alignment: left
+    keep_with_next: true
+    provenance: {source: TEST_PROFILE.md, evidence: 三级标题用小四号楷体}
+    confidence: explicit
+footnotes:
+  font: {east_asia: 宋体, latin: Times New Roman}
+  size: {chinese_name: 五号, pt: 10.5}
+  line_spacing: 1.0
+  provenance: {source: TEST_PROFILE.md, evidence: 脚注采用五号宋体}
+  confidence: explicit
+bibliography:
+  font: {east_asia: 宋体, latin: Times New Roman}
+  size: {chinese_name: 五号, pt: 10.5}
+  hanging_indent_chars: 2
+  line_spacing: 1.0
+  provenance: {source: TEST_PROFILE.md, evidence: 参考文献采用五号宋体}
+  confidence: explicit
+funding:
+  font: {east_asia: 宋体, latin: Times New Roman}
+  size: {chinese_name: 五号, pt: 10.5}
+  provenance: {source: TEST_PROFILE.md, evidence: 测试要求保留基金项目字段}
+  confidence: inferred
+figures:
+  font: {east_asia: 宋体, latin: Times New Roman}
+  size: {chinese_name: 五号, pt: 10.5}
+  alignment: center
+  confidence: unknown
+tables:
+  font: {east_asia: 宋体, latin: Times New Roman}
+  size: {chinese_name: 五号, pt: 10.5}
+  alignment: center
+  confidence: unknown
+anonymous_review:
+  required: false
+  provenance: {source: TEST_PROFILE.md, evidence: 本测试 profile 不要求匿名审稿}
+  confidence: explicit
+word_count:
+  minimum: 150
+  maximum: 20000
+  unit: characters
+  provenance: {source: TEST_PROFILE.md, evidence: 正文 150 至 20000 字}
+  confidence: explicit
+abstract_count:
+  maximum: 300
+  unit: characters
+  provenance: {source: TEST_PROFILE.md, evidence: 摘要不超过 300 字}
+  confidence: explicit
+keyword_count:
+  minimum: 3
+  maximum: 8
+  unit: items
+  provenance: {source: TEST_PROFILE.md, evidence: 关键词 3 至 8 个}
+  confidence: explicit
+citation:
+  default_mode: static
+  bibliography: bibliography/references.json
+  csl: citation.csl
+  zotero_style: chicago-author-date
+  locale: zh-CN
+  allow_csl_m_static: false
+output:
+  reference_docx: reference.docx
+  filename_pattern: "{manuscript}-{journal}.docx"

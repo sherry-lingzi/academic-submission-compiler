@@ -1,0 +1,35 @@
+[
+  {
+    "id": "hayles1999",
+    "type": "book",
+    "title": "How We Became Posthuman",
+    "author": [{"family": "Hayles", "given": "N. Katherine"}],
+    "publisher": "University of Chicago Press",
+    "publisher-place": "Chicago",
+    "issued": {"date-parts": [[1999]]},
+    "language": "en"
+  },
+  {
+    "id": "liu2020",
+    "type": "article-journal",
+    "title": "技术中介与当代文化经验",
+    "author": [{"family": "刘", "given": "某"}],
+    "container-title": "文艺理论研究",
+    "volume": "40",
+    "issue": "3",
+    "page": "45-58",
+    "issued": {"date-parts": [[2020]]},
+    "language": "zh-CN"
+  },
+  {
+    "id": "haraway1985",
+    "type": "chapter",
+    "title": "A Cyborg Manifesto",
+    "author": [{"family": "Haraway", "given": "Donna"}],
+    "container-title": "Simians Cyborgs and Women",
+    "publisher": "Routledge",
+    "issued": {"date-parts": [[1991]]},
+    "language": "en"
+  }
+]
+

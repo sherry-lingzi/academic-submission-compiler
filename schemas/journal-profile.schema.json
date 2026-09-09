@@ -1,0 +1,755 @@
+{
+  "$defs": {
+    "AnonymousReviewRule": {
+      "properties": {
+        "required": {
+          "default": false,
+          "title": "Required",
+          "type": "boolean"
+        },
+        "hide_authors": {
+          "default": true,
+          "title": "Hide Authors",
+          "type": "boolean"
+        },
+        "hide_affiliations": {
+          "default": true,
+          "title": "Hide Affiliations",
+          "type": "boolean"
+        },
+        "hide_funding": {
+          "default": true,
+          "title": "Hide Funding",
+          "type": "boolean"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Provenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "confidence": {
+          "$ref": "#/$defs/Confidence",
+          "default": "unknown"
+        }
+      },
+      "title": "AnonymousReviewRule",
+      "type": "object"
+    },
+    "CitationRule": {
+      "properties": {
+        "default_mode": {
+          "default": "static",
+          "enum": [
+            "static",
+            "live-zotero"
+          ],
+          "title": "Default Mode",
+          "type": "string"
+        },
+        "bibliography": {
+          "default": "bibliography/references.json",
+          "title": "Bibliography",
+          "type": "string"
+        },
+        "csl": {
+          "default": "citation.csl",
+          "title": "Csl",
+          "type": "string"
+        },
+        "zotero_style": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Zotero Style"
+        },
+        "locale": {
+          "default": "zh-CN",
+          "title": "Locale",
+          "type": "string"
+        },
+        "allow_csl_m_static": {
+          "default": false,
+          "title": "Allow Csl M Static",
+          "type": "boolean"
+        }
+      },
+      "title": "CitationRule",
+      "type": "object"
+    },
+    "Confidence": {
+      "enum": [
+        "explicit",
+        "inferred",
+        "unknown"
+      ],
+      "title": "Confidence",
+      "type": "string"
+    },
+    "CountConstraint": {
+      "properties": {
+        "minimum": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Minimum"
+        },
+        "maximum": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Maximum"
+        },
+        "unit": {
+          "default": "items",
+          "enum": [
+            "words",
+            "characters",
+            "items"
+          ],
+          "title": "Unit",
+          "type": "string"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Provenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "confidence": {
+          "$ref": "#/$defs/Confidence",
+          "default": "unknown"
+        }
+      },
+      "title": "CountConstraint",
+      "type": "object"
+    },
+    "DocumentRule": {
+      "properties": {
+        "page_size": {
+          "default": "A4",
+          "enum": [
+            "A4",
+            "Letter"
+          ],
+          "title": "Page Size",
+          "type": "string"
+        },
+        "margins": {
+          "$ref": "#/$defs/Margins"
+        },
+        "text_color": {
+          "default": "000000",
+          "pattern": "^[0-9A-Fa-f]{6}$",
+          "title": "Text Color",
+          "type": "string"
+        },
+        "line_spacing": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Line Spacing"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Provenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "confidence": {
+          "$ref": "#/$defs/Confidence",
+          "default": "unknown"
+        }
+      },
+      "required": [
+        "margins"
+      ],
+      "title": "DocumentRule",
+      "type": "object"
+    },
+    "FontSpec": {
+      "properties": {
+        "east_asia": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "East Asia"
+        },
+        "latin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Latin"
+        },
+        "complex_script": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Complex Script"
+        }
+      },
+      "title": "FontSpec",
+      "type": "object"
+    },
+    "JournalInfo": {
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "language": {
+          "default": "zh-CN",
+          "title": "Language",
+          "type": "string"
+        },
+        "test_only": {
+          "default": false,
+          "title": "Test Only",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "title": "JournalInfo",
+      "type": "object"
+    },
+    "Margins": {
+      "properties": {
+        "top_mm": {
+          "title": "Top Mm",
+          "type": "number"
+        },
+        "bottom_mm": {
+          "title": "Bottom Mm",
+          "type": "number"
+        },
+        "left_mm": {
+          "title": "Left Mm",
+          "type": "number"
+        },
+        "right_mm": {
+          "title": "Right Mm",
+          "type": "number"
+        }
+      },
+      "required": [
+        "top_mm",
+        "bottom_mm",
+        "left_mm",
+        "right_mm"
+      ],
+      "title": "Margins",
+      "type": "object"
+    },
+    "OutputRule": {
+      "properties": {
+        "reference_docx": {
+          "default": "reference.docx",
+          "title": "Reference Docx",
+          "type": "string"
+        },
+        "filename_pattern": {
+          "default": "{manuscript}-{journal}.docx",
+          "title": "Filename Pattern",
+          "type": "string"
+        }
+      },
+      "title": "OutputRule",
+      "type": "object"
+    },
+    "Provenance": {
+      "properties": {
+        "source": {
+          "title": "Source",
+          "type": "string"
+        },
+        "page": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Page"
+        },
+        "section": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Section"
+        },
+        "evidence": {
+          "title": "Evidence",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source",
+        "evidence"
+      ],
+      "title": "Provenance",
+      "type": "object"
+    },
+    "RuleCandidate": {
+      "properties": {
+        "value": {
+          "title": "Value"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Provenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "value",
+        "source"
+      ],
+      "title": "RuleCandidate",
+      "type": "object"
+    },
+    "SizeSpec": {
+      "properties": {
+        "chinese_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Chinese Name"
+        },
+        "pt": {
+          "title": "Pt",
+          "type": "number"
+        }
+      },
+      "required": [
+        "pt"
+      ],
+      "title": "SizeSpec",
+      "type": "object"
+    },
+    "StyleRule": {
+      "additionalProperties": false,
+      "properties": {
+        "font": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FontSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "size": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SizeSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "bold": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bold"
+        },
+        "italic": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Italic"
+        },
+        "alignment": {
+          "anyOf": [
+            {
+              "enum": [
+                "left",
+                "center",
+                "right",
+                "justify"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Alignment"
+        },
+        "first_line_indent_chars": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "First Line Indent Chars"
+        },
+        "hanging_indent_chars": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hanging Indent Chars"
+        },
+        "line_spacing": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Line Spacing"
+        },
+        "space_before_pt": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Space Before Pt"
+        },
+        "space_after_pt": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Space After Pt"
+        },
+        "keep_with_next": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Keep With Next"
+        },
+        "pagination": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pagination"
+        },
+        "numbering": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Numbering"
+        },
+        "separator": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Separator"
+        },
+        "prefix": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prefix"
+        },
+        "suffix": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Suffix"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Provenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "confidence": {
+          "$ref": "#/$defs/Confidence",
+          "default": "unknown"
+        },
+        "candidates": {
+          "items": {
+            "$ref": "#/$defs/RuleCandidate"
+          },
+          "title": "Candidates",
+          "type": "array"
+        }
+      },
+      "title": "StyleRule",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "profile_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Profile Version",
+      "type": "string"
+    },
+    "journal": {
+      "$ref": "#/$defs/JournalInfo"
+    },
+    "document": {
+      "$ref": "#/$defs/DocumentRule"
+    },
+    "title": {
+      "$ref": "#/$defs/StyleRule"
+    },
+    "authors": {
+      "$ref": "#/$defs/StyleRule"
+    },
+    "affiliations": {
+      "$ref": "#/$defs/StyleRule"
+    },
+    "abstract": {
+      "$ref": "#/$defs/StyleRule"
+    },
+    "keywords": {
+      "$ref": "#/$defs/StyleRule"
+    },
+    "body": {
+      "$ref": "#/$defs/StyleRule"
+    },
+    "headings": {
+      "additionalProperties": {
+        "$ref": "#/$defs/StyleRule"
+      },
+      "propertyNames": {
+        "enum": [
+          "level1",
+          "level2",
+          "level3"
+        ]
+      },
+      "title": "Headings",
+      "type": "object"
+    },
+    "footnotes": {
+      "$ref": "#/$defs/StyleRule"
+    },
+    "bibliography": {
+      "$ref": "#/$defs/StyleRule"
+    },
+    "funding": {
+      "$ref": "#/$defs/StyleRule"
+    },
+    "figures": {
+      "$ref": "#/$defs/StyleRule"
+    },
+    "tables": {
+      "$ref": "#/$defs/StyleRule"
+    },
+    "anonymous_review": {
+      "$ref": "#/$defs/AnonymousReviewRule"
+    },
+    "word_count": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CountConstraint"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "abstract_count": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CountConstraint"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "keyword_count": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CountConstraint"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "citation": {
+      "$ref": "#/$defs/CitationRule"
+    },
+    "output": {
+      "$ref": "#/$defs/OutputRule"
+    }
+  },
+  "required": [
+    "journal",
+    "document"
+  ],
+  "title": "JournalProfile",
+  "type": "object"
+}

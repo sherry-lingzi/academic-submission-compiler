@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<style xmlns="http://purl.org/net/xbiblio/csl" version="1.0" class="in-text" default-locale="zh-CN">
+  <info>
+    <title>ASC Example Humanities Author Date</title>
+    <id>https://example.invalid/styles/asc-example-humanities-author-date</id>
+    <link href="https://example.invalid/styles/asc-example-humanities-author-date" rel="self"/>
+    <author><name>Academic Submission Compiler contributors</name></author>
+    <category citation-format="author-date"/>
+    <updated>2026-09-09T00:00:00+00:00</updated>
+    <rights license="http://creativecommons.org/publicdomain/zero/1.0/">CC0</rights>
+  </info>
+  <macro name="author">
+    <names variable="author">
+      <name initialize-with=". " and="text" delimiter=", "/>
+      <substitute><text variable="title"/></substitute>
+    </names>
+  </macro>
+  <macro name="year">
+    <date variable="issued"><date-part name="year"/></date>
+  </macro>
+  <citation et-al-min="4" et-al-use-first="1" disambiguate-add-year-suffix="true">
+    <layout prefix="（" suffix="）" delimiter="；">
+      <group delimiter="，">
+        <text macro="author"/>
+        <text macro="year"/>
+        <group delimiter=" ">
+          <label variable="locator" form="short"/>
+          <text variable="locator"/>
+        </group>
+      </group>
+    </layout>
+  </citation>
+  <bibliography hanging-indent="true" et-al-min="8" et-al-use-first="6">
+    <sort><key macro="author"/><key macro="year"/></sort>
+    <layout suffix=".">
+      <text macro="author" suffix=". "/>
+      <text macro="year" suffix=". "/>
+      <text variable="title" font-style="italic" suffix=". "/>
+      <text variable="container-title" suffix=" "/>
+      <text variable="volume"/>
+      <text variable="issue" prefix="(" suffix=")"/>
+      <text variable="page" prefix=": "/>
+    </layout>
+  </bibliography>
+</style>
+
