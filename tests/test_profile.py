@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
+from asc.capabilities import STYLE_FIELD_CAPABILITIES
 from asc.models import JournalProfile, StyleRule, load_profile
 
 
@@ -28,6 +29,15 @@ def test_schema_contains_core_fields():
     schema = JournalProfile.model_json_schema()
     for field in ("journal", "document", "title", "body", "citation", "output"):
         assert field in schema["properties"]
+
+
+def test_every_style_field_has_a_capability_classification():
+    metadata = {"font", "provenance", "confidence", "source_kind", "candidates"}
+    for field in StyleRule.model_fields:
+        if field in metadata:
+            continue
+        assert field in STYLE_FIELD_CAPABILITIES or field == "font"
+    assert set(STYLE_FIELD_CAPABILITIES.values()) <= {"supported", "partial", "unsupported"}
 
 
 def test_journal_profiles_change_typography(root: Path):

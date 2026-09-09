@@ -74,14 +74,13 @@ def extract_citations(text: str) -> list[Citation]:
     prose = prose_without_code(text)
     citations: list[Citation] = []
     for match in _CITEKEY.finditer(prose):
-        before = prose[max(0, match.start() - 80) : match.start()]
-        after = prose[match.end() : match.end() + 80]
-        bracket_start = before.rfind("[")
-        bracket_end = after.find("]")
+        bracket_start = prose.rfind("[", 0, match.start())
+        previous_close = prose.rfind("]", 0, match.start())
+        bracket_end = prose.find("]", match.end())
         locator = None
-        narrative = bracket_start < 0 or bracket_end < 0
+        narrative = bracket_start <= previous_close or bracket_end < 0
         if not narrative:
-            tail = after[:bracket_end]
+            tail = prose[match.end() : bracket_end]
             locator_match = re.search(r",\s*(?:p{1,2}\.?\s*)?([^;]+)", tail, re.IGNORECASE)
             if locator_match:
                 locator = locator_match.group(1).strip()
@@ -95,4 +94,3 @@ def wikilink_targets(text: str) -> list[str]:
 
 def embed_targets(text: str) -> list[str]:
     return [m.group(1).split("|", 1)[0].split("#", 1)[0].strip() for m in re.finditer(r"!\[\[([^\]]+)\]\]", prose_without_code(text))]
-

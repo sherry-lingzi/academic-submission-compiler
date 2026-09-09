@@ -1,0 +1,31 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install Pandoc
+        shell: pwsh
+        run: choco install pandoc --no-progress -y
+      - name: Install project
+        shell: pwsh
+        run: python -m pip install -e ".[dev]"
+      - name: Unit and integration tests
+        shell: pwsh
+        run: python -X utf8 -m pytest
+      - name: Real demo contract
+        shell: pwsh
+        run: |
+          asc doctor
+          asc check "examples/demo-paper/paper.md" --journal example-humanities-journal
+          asc build "examples/demo-paper/paper.md" --journal example-humanities-journal --static
+          asc inspect "dist/demo-paper-example-humanities-journal.docx" --journal example-humanities-journal

@@ -16,6 +16,15 @@ def test_single_multi_narrative_and_locator():
     assert citations[1].locator == "35"
 
 
+def test_citation_edge_cases_and_email_exclusion():
+    text = "[@smith2020, pp. 12–15] [-@smith2020] [see @smith2020] [@smith2020, chap. 2] @smith2020 argues [@a; @b; @c] email@example.com"
+    citations = extract_citations(text)
+    assert [item.key for item in citations] == ["smith2020", "smith2020", "smith2020", "smith2020", "smith2020", "a", "b", "c"]
+    assert citations[0].locator == "12–15"
+    assert citations[3].locator == "chap. 2"
+    assert citations[4].narrative
+
+
 def test_wikilink_and_embed():
     text = "见 [[工作流说明|条目]]。\n![[figures/workflow.png]]"
     assert wikilink_targets(text) == ["工作流说明"]

@@ -1,4 +1,6 @@
-profile_version: "1.0"
+profile_version: '2.0'
+profile_status: approved
+approved_at: '2026-09-09T17:23:19+00:00'
 journal:
   id: example-compact-journal
   name: 虚构紧凑格式测试刊
@@ -7,135 +9,364 @@ journal:
 document:
   page_size: A4
   margins:
-    top_mm: 20
-    bottom_mm: 20
-    left_mm: 25
-    right_mm: 25
-  text_color: "000000"
+    top_mm: 20.0
+    bottom_mm: 20.0
+    left_mm: 25.0
+    right_mm: 25.0
+  text_color: '000000'
   line_spacing: 1.5
-  provenance: &source
+  provenance:
     source: TEST_PROFILE.md
     section: 虚构人文学刊测试投稿要求
     evidence: 全文文字颜色为黑色；页边距上下 20 毫米、左右 25 毫米
   confidence: explicit
+  source_kind: journal
 title:
-  font: {east_asia: 黑体, latin: Times New Roman}
-  size: {chinese_name: 小二, pt: 18}
-  bold: true
-  alignment: center
-  space_after_pt: 12
-  keep_with_next: true
-  provenance: {source: TEST_PROFILE.md, evidence: 论文标题采用小二号黑体居中}
-  confidence: explicit
+  default:
+    font:
+      east_asia: 黑体
+      latin: Times New Roman
+    size:
+      chinese_name: 小二
+      pt: 18.0
+    bold: true
+    alignment: center
+    space_after_pt: 12.0
+    keep_with_next: true
+    provenance:
+      source: TEST_PROFILE.md
+      evidence: 论文标题采用小二号黑体居中
+    confidence: explicit
+    source_kind: journal
+    candidates: []
 authors:
-  font: {east_asia: 楷体, latin: Times New Roman}
-  size: {chinese_name: 四号, pt: 14}
+  font:
+    east_asia: 楷体
+    latin: Times New Roman
+  size:
+    chinese_name: 四号
+    pt: 14.0
   alignment: center
-  provenance: {source: TEST_PROFILE.md, evidence: 作者使用四号楷体居中}
+  provenance:
+    source: TEST_PROFILE.md
+    evidence: 作者使用四号楷体居中
   confidence: explicit
+  source_kind: journal
+  candidates: []
 affiliations:
-  font: {east_asia: 宋体, latin: Times New Roman}
-  size: {chinese_name: 小四, pt: 12}
+  font:
+    east_asia: 宋体
+    latin: Times New Roman
+  size:
+    chinese_name: 小四
+    pt: 12.0
   alignment: center
-  space_after_pt: 10
-  provenance: {source: TEST_PROFILE.md, evidence: 单位使用小四号宋体居中}
+  space_after_pt: 10.0
+  provenance:
+    source: TEST_PROFILE.md
+    evidence: 单位使用小四号宋体居中
   confidence: explicit
+  source_kind: journal
+  candidates: []
 abstract:
-  font: {east_asia: 宋体, latin: Times New Roman}
-  size: {chinese_name: 五号, pt: 10.5}
-  alignment: justify
-  line_spacing: 1.25
-  provenance: {source: TEST_PROFILE.md, evidence: 中文摘要使用五号宋体，英文使用 Times New Roman}
-  confidence: explicit
+  zh:
+    label:
+      font:
+        east_asia: 宋体
+        latin: Times New Roman
+      size:
+        chinese_name: 五号
+        pt: 10.5
+      bold: true
+      confidence: unknown
+      source_kind: system_default
+      candidates: []
+    body:
+      font:
+        east_asia: 宋体
+        latin: Times New Roman
+      size:
+        chinese_name: 五号
+        pt: 10.5
+      alignment: justify
+      line_spacing: 1.25
+      provenance:
+        source: TEST_PROFILE.md
+        evidence: 中文摘要使用五号宋体，英文使用 Times New Roman
+      confidence: explicit
+      source_kind: journal
+      candidates: []
+    count:
+      maximum: 300
+      unit: characters
+      provenance:
+        source: TEST_PROFILE.md
+        evidence: 摘要不超过 300 字
+      confidence: explicit
+      source_kind: journal
+    separator_source_kind: system_default
+  en:
+    label:
+      font:
+        east_asia: 宋体
+        latin: Times New Roman
+      size:
+        chinese_name: 五号
+        pt: 10.5
+      bold: true
+      confidence: unknown
+      source_kind: system_default
+      candidates: []
+    body:
+      font:
+        east_asia: 宋体
+        latin: Times New Roman
+      size:
+        chinese_name: 五号
+        pt: 10.5
+      alignment: justify
+      line_spacing: 1.25
+      provenance:
+        source: TEST_PROFILE.md
+        evidence: 中文摘要使用五号宋体，英文使用 Times New Roman
+      confidence: explicit
+      source_kind: journal
+      candidates: []
+    count:
+      maximum: 300
+      unit: words
+      confidence: unknown
+      source_kind: system_default
+    separator_source_kind: system_default
 keywords:
-  font: {east_asia: 宋体, latin: Times New Roman}
-  size: {chinese_name: 五号, pt: 10.5}
-  alignment: left
-  space_after_pt: 8
-  provenance: {source: TEST_PROFILE.md, evidence: 关键词使用五号宋体}
-  confidence: explicit
+  zh:
+    label:
+      font:
+        east_asia: 宋体
+        latin: Times New Roman
+      size:
+        chinese_name: 五号
+        pt: 10.5
+      bold: true
+      confidence: unknown
+      source_kind: system_default
+      candidates: []
+    body:
+      font:
+        east_asia: 宋体
+        latin: Times New Roman
+      size:
+        chinese_name: 五号
+        pt: 10.5
+      alignment: left
+      space_after_pt: 8.0
+      provenance:
+        source: TEST_PROFILE.md
+        evidence: 关键词使用五号宋体
+      confidence: explicit
+      source_kind: journal
+      candidates: []
+    count:
+      minimum: 3
+      maximum: 6
+      unit: items
+      provenance:
+        source: TEST_PROFILE.md
+        evidence: 关键词 3 至 6 个
+      confidence: explicit
+      source_kind: journal
+    separator: ；
+    separator_source_kind: system_default
+  en:
+    label:
+      font:
+        east_asia: 宋体
+        latin: Times New Roman
+      size:
+        chinese_name: 五号
+        pt: 10.5
+      bold: true
+      confidence: unknown
+      source_kind: system_default
+      candidates: []
+    body:
+      font:
+        east_asia: 宋体
+        latin: Times New Roman
+      size:
+        chinese_name: 五号
+        pt: 10.5
+      alignment: left
+      space_after_pt: 8.0
+      provenance:
+        source: TEST_PROFILE.md
+        evidence: 关键词使用五号宋体
+      confidence: explicit
+      source_kind: journal
+      candidates: []
+    count:
+      minimum: 3
+      maximum: 6
+      unit: items
+      provenance:
+        source: TEST_PROFILE.md
+        evidence: 关键词 3 至 6 个
+      confidence: explicit
+      source_kind: journal
+    separator: '; '
+    separator_source_kind: system_default
 body:
-  font: {east_asia: 仿宋, latin: Times New Roman}
-  size: {chinese_name: 五号, pt: 10.5}
+  font:
+    east_asia: 仿宋
+    latin: Times New Roman
+  size:
+    chinese_name: 五号
+    pt: 10.5
   alignment: justify
-  first_line_indent_chars: 2
+  first_line_indent_chars: 2.0
   line_spacing: 1.5
-  space_after_pt: 0
-  provenance: {source: TEST_PROFILE.md, evidence: 正文采用五号仿宋，英文和数字采用 Times New Roman，1.5 倍行距，两端对齐，首行缩进 2 字符}
+  space_after_pt: 0.0
+  provenance:
+    source: TEST_PROFILE.md
+    evidence: 正文采用五号仿宋，英文和数字采用 Times New Roman，1.5 倍行距，两端对齐，首行缩进 2 字符
   confidence: explicit
+  source_kind: journal
+  candidates: []
 headings:
   level1:
-    font: {east_asia: 黑体, latin: Times New Roman}
-    size: {chinese_name: 四号, pt: 14}
+    font:
+      east_asia: 黑体
+      latin: Times New Roman
+    size:
+      chinese_name: 四号
+      pt: 14.0
     bold: true
     alignment: center
     keep_with_next: true
-    provenance: {source: TEST_PROFILE.md, evidence: 一级标题用四号黑体}
+    provenance:
+      source: TEST_PROFILE.md
+      evidence: 一级标题用四号黑体
     confidence: explicit
+    source_kind: journal
+    candidates: []
   level2:
-    font: {east_asia: 黑体, latin: Times New Roman}
-    size: {chinese_name: 小四, pt: 12}
+    font:
+      east_asia: 黑体
+      latin: Times New Roman
+    size:
+      chinese_name: 小四
+      pt: 12.0
     bold: true
     alignment: left
     keep_with_next: true
-    provenance: {source: TEST_PROFILE.md, evidence: 二级标题用小四号黑体}
+    provenance:
+      source: TEST_PROFILE.md
+      evidence: 二级标题用小四号黑体
     confidence: explicit
+    source_kind: journal
+    candidates: []
   level3:
-    font: {east_asia: 楷体, latin: Times New Roman}
-    size: {chinese_name: 小四, pt: 12}
+    font:
+      east_asia: 楷体
+      latin: Times New Roman
+    size:
+      chinese_name: 小四
+      pt: 12.0
     alignment: left
     keep_with_next: true
-    provenance: {source: TEST_PROFILE.md, evidence: 三级标题用小四号楷体}
+    provenance:
+      source: TEST_PROFILE.md
+      evidence: 三级标题用小四号楷体
     confidence: explicit
+    source_kind: journal
+    candidates: []
 footnotes:
-  font: {east_asia: 宋体, latin: Times New Roman}
-  size: {chinese_name: 五号, pt: 10.5}
+  font:
+    east_asia: 宋体
+    latin: Times New Roman
+  size:
+    chinese_name: 五号
+    pt: 10.5
   line_spacing: 1.0
-  provenance: {source: TEST_PROFILE.md, evidence: 脚注采用五号宋体}
+  provenance:
+    source: TEST_PROFILE.md
+    evidence: 脚注采用五号宋体
   confidence: explicit
+  source_kind: journal
+  candidates: []
 bibliography:
-  font: {east_asia: 宋体, latin: Times New Roman}
-  size: {chinese_name: 五号, pt: 10.5}
-  hanging_indent_chars: 2
+  font:
+    east_asia: 宋体
+    latin: Times New Roman
+  size:
+    chinese_name: 五号
+    pt: 10.5
+  hanging_indent_chars: 2.0
   line_spacing: 1.0
-  provenance: {source: TEST_PROFILE.md, evidence: 参考文献采用五号宋体}
+  provenance:
+    source: TEST_PROFILE.md
+    evidence: 参考文献采用五号宋体
   confidence: explicit
+  source_kind: journal
+  candidates: []
 funding:
-  font: {east_asia: 宋体, latin: Times New Roman}
-  size: {chinese_name: 五号, pt: 10.5}
-  provenance: {source: TEST_PROFILE.md, evidence: 测试要求保留基金项目字段}
+  font:
+    east_asia: 宋体
+    latin: Times New Roman
+  size:
+    chinese_name: 五号
+    pt: 10.5
+  provenance:
+    source: TEST_PROFILE.md
+    evidence: 测试要求保留基金项目字段
   confidence: inferred
+  source_kind: inferred
+  candidates: []
 figures:
-  font: {east_asia: 宋体, latin: Times New Roman}
-  size: {chinese_name: 五号, pt: 10.5}
+  font:
+    east_asia: 宋体
+    latin: Times New Roman
+  size:
+    chinese_name: 五号
+    pt: 10.5
   alignment: center
   confidence: unknown
+  source_kind: system_default
+  candidates: []
 tables:
-  font: {east_asia: 宋体, latin: Times New Roman}
-  size: {chinese_name: 五号, pt: 10.5}
+  font:
+    east_asia: 宋体
+    latin: Times New Roman
+  size:
+    chinese_name: 五号
+    pt: 10.5
   alignment: center
   confidence: unknown
+  source_kind: system_default
+  candidates: []
 anonymous_review:
   required: false
-  provenance: {source: TEST_PROFILE.md, evidence: 本测试 profile 不要求匿名审稿}
+  hide_authors: true
+  hide_affiliations: true
+  hide_funding: true
+  hide_email: true
+  hide_orcid: true
+  hide_correspondence: true
+  hide_acknowledgements: true
+  provenance:
+    source: TEST_PROFILE.md
+    evidence: 本测试 profile 不要求匿名审稿
   confidence: explicit
+  source_kind: journal
 word_count:
   minimum: 150
   maximum: 20000
   unit: characters
-  provenance: {source: TEST_PROFILE.md, evidence: 正文 150 至 20000 字}
+  provenance:
+    source: TEST_PROFILE.md
+    evidence: 正文 150 至 20000 字
   confidence: explicit
-abstract_count:
-  maximum: 300
-  unit: characters
-  provenance: {source: TEST_PROFILE.md, evidence: 摘要不超过 300 字}
-  confidence: explicit
-keyword_count:
-  minimum: 3
-  maximum: 6
-  unit: items
-  provenance: {source: TEST_PROFILE.md, evidence: 关键词 3 至 6 个}
-  confidence: explicit
+  source_kind: journal
 citation:
   default_mode: static
   bibliography: bibliography/references.json
@@ -145,5 +376,9 @@ citation:
   allow_csl_m_static: false
 output:
   reference_docx: reference.docx
-  filename_pattern: "{manuscript}-{journal}.docx"
-
+  filename_pattern: '{manuscript}-{journal}.docx'
+obsidian:
+  attachment_paths:
+  - attachments
+  - assets
+  - figures

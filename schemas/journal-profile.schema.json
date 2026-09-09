@@ -1,6 +1,7 @@
 {
   "$defs": {
     "AnonymousReviewRule": {
+      "additionalProperties": false,
       "properties": {
         "required": {
           "default": false,
@@ -22,6 +23,26 @@
           "title": "Hide Funding",
           "type": "boolean"
         },
+        "hide_email": {
+          "default": true,
+          "title": "Hide Email",
+          "type": "boolean"
+        },
+        "hide_orcid": {
+          "default": true,
+          "title": "Hide Orcid",
+          "type": "boolean"
+        },
+        "hide_correspondence": {
+          "default": true,
+          "title": "Hide Correspondence",
+          "type": "boolean"
+        },
+        "hide_acknowledgements": {
+          "default": true,
+          "title": "Hide Acknowledgements",
+          "type": "boolean"
+        },
         "provenance": {
           "anyOf": [
             {
@@ -36,12 +57,37 @@
         "confidence": {
           "$ref": "#/$defs/Confidence",
           "default": "unknown"
+        },
+        "source_kind": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceKind"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "title": "AnonymousReviewRule",
       "type": "object"
     },
+    "BilingualTextRule": {
+      "additionalProperties": false,
+      "properties": {
+        "zh": {
+          "$ref": "#/$defs/TextVariantRule"
+        },
+        "en": {
+          "$ref": "#/$defs/TextVariantRule"
+        }
+      },
+      "title": "BilingualTextRule",
+      "type": "object"
+    },
     "CitationRule": {
+      "additionalProperties": false,
       "properties": {
         "default_mode": {
           "default": "static",
@@ -92,12 +138,14 @@
       "enum": [
         "explicit",
         "inferred",
+        "user_confirmed",
         "unknown"
       ],
       "title": "Confidence",
       "type": "string"
     },
     "CountConstraint": {
+      "additionalProperties": false,
       "properties": {
         "minimum": {
           "anyOf": [
@@ -147,12 +195,24 @@
         "confidence": {
           "$ref": "#/$defs/Confidence",
           "default": "unknown"
+        },
+        "source_kind": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceKind"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "title": "CountConstraint",
       "type": "object"
     },
     "DocumentRule": {
+      "additionalProperties": false,
       "properties": {
         "page_size": {
           "default": "A4",
@@ -198,6 +258,17 @@
         "confidence": {
           "$ref": "#/$defs/Confidence",
           "default": "unknown"
+        },
+        "source_kind": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceKind"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -277,6 +348,38 @@
       "title": "JournalInfo",
       "type": "object"
     },
+    "LocalizedTitleRule": {
+      "additionalProperties": false,
+      "properties": {
+        "default": {
+          "$ref": "#/$defs/StyleRule"
+        },
+        "zh": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/StyleRule"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "en": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/StyleRule"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "LocalizedTitleRule",
+      "type": "object"
+    },
     "Margins": {
       "properties": {
         "top_mm": {
@@ -305,7 +408,22 @@
       "title": "Margins",
       "type": "object"
     },
+    "ObsidianRule": {
+      "additionalProperties": false,
+      "properties": {
+        "attachment_paths": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Attachment Paths",
+          "type": "array"
+        }
+      },
+      "title": "ObsidianRule",
+      "type": "object"
+    },
     "OutputRule": {
+      "additionalProperties": false,
       "properties": {
         "reference_docx": {
           "default": "reference.docx",
@@ -320,6 +438,15 @@
       },
       "title": "OutputRule",
       "type": "object"
+    },
+    "ProfileStatus": {
+      "enum": [
+        "generated",
+        "reviewed",
+        "approved"
+      ],
+      "title": "ProfileStatus",
+      "type": "string"
     },
     "Provenance": {
       "properties": {
@@ -415,6 +542,17 @@
       ],
       "title": "SizeSpec",
       "type": "object"
+    },
+    "SourceKind": {
+      "enum": [
+        "journal",
+        "template",
+        "inferred",
+        "system_default",
+        "user_override"
+      ],
+      "title": "SourceKind",
+      "type": "string"
     },
     "StyleRule": {
       "additionalProperties": false,
@@ -630,6 +768,17 @@
           "$ref": "#/$defs/Confidence",
           "default": "unknown"
         },
+        "source_kind": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceKind"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "candidates": {
           "items": {
             "$ref": "#/$defs/RuleCandidate"
@@ -640,15 +789,82 @@
       },
       "title": "StyleRule",
       "type": "object"
+    },
+    "TextVariantRule": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "$ref": "#/$defs/StyleRule"
+        },
+        "body": {
+          "$ref": "#/$defs/StyleRule"
+        },
+        "count": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CountConstraint"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "separator": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Separator"
+        },
+        "separator_source_kind": {
+          "$ref": "#/$defs/SourceKind",
+          "default": "system_default"
+        },
+        "separator_provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Provenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "TextVariantRule",
+      "type": "object"
     }
   },
   "additionalProperties": false,
   "properties": {
     "profile_version": {
-      "const": "1.0",
-      "default": "1.0",
+      "const": "2.0",
+      "default": "2.0",
       "title": "Profile Version",
       "type": "string"
+    },
+    "profile_status": {
+      "$ref": "#/$defs/ProfileStatus",
+      "default": "generated"
+    },
+    "approved_at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Approved At"
     },
     "journal": {
       "$ref": "#/$defs/JournalInfo"
@@ -657,7 +873,7 @@
       "$ref": "#/$defs/DocumentRule"
     },
     "title": {
-      "$ref": "#/$defs/StyleRule"
+      "$ref": "#/$defs/LocalizedTitleRule"
     },
     "authors": {
       "$ref": "#/$defs/StyleRule"
@@ -666,10 +882,10 @@
       "$ref": "#/$defs/StyleRule"
     },
     "abstract": {
-      "$ref": "#/$defs/StyleRule"
+      "$ref": "#/$defs/BilingualTextRule"
     },
     "keywords": {
-      "$ref": "#/$defs/StyleRule"
+      "$ref": "#/$defs/BilingualTextRule"
     },
     "body": {
       "$ref": "#/$defs/StyleRule"
@@ -717,33 +933,14 @@
       ],
       "default": null
     },
-    "abstract_count": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/CountConstraint"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null
-    },
-    "keyword_count": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/CountConstraint"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null
-    },
     "citation": {
       "$ref": "#/$defs/CitationRule"
     },
     "output": {
       "$ref": "#/$defs/OutputRule"
+    },
+    "obsidian": {
+      "$ref": "#/$defs/ObsidianRule"
     }
   },
   "required": [

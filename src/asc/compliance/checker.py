@@ -1,37 +1,20 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from enum import Enum
 from pathlib import Path
 import re
 from typing import Any
 
 from asc.citations import bibliography_keys, csl_m_reasons
+from asc.findings import Finding, Status, overall_status, render_report
 from asc.markdown import embed_targets, extract_citations, parse_markdown
-from asc.models import JournalProfile
+from asc.models import Confidence, JournalProfile, ProfileStatus, SourceKind
+from asc.paths import attachment_candidates, resolve_profile_resource
 
 
-class Status(str, Enum):
-    PASS = "PASS"
-    WARNING = "WARNING"
-    FAIL = "FAIL"
-    UNKNOWN = "UNKNOWN"
-
-
-@dataclass(frozen=True)
-class Finding:
-    section: str
-    status: Status
-    message: str
-
-
-def _get(meta: dict[str, Any], *path: str) -> Any:
-    current: Any = meta
-    for key in path:
-        if not isinstance(current, dict):
-            return None
-        current = current.get(key)
-    return current
+SOURCE = "Source / Markdown Compliance"
+CITATION = "Citation Compliance"
+ANONYMOUS = "Anonymous Review"
+PROFILE = "Profile / Unknown Rules"
 
 
 def _count_text(value: Any, unit: str) -> int:
@@ -41,132 +24,133 @@ def _count_text(value: Any, unit: str) -> int:
         text = "\n".join(str(v) for v in value.values())
     else:
         text = str(value)
+    if unit == "items":
+        return len(value) if isinstance(value, (list, tuple, set)) else int(bool(text.strip()))
     if unit == "characters":
         return len(re.sub(r"\s+", "", text))
-    return len(re.findall(r"[\u3400-\u9fff]|[A-Za-z0-9]+(?:[-'][A-Za-z0-9]+)*", text))
+    return len(re.findall(r"[A-Za-z0-9]+(?:[-'][A-Za-z0-9]+)*|[\u3400-\u9fff]", text))
 
 
-def _check_bounds(section: str, label: str, count: int, constraint: Any) -> list[Finding]:
+def _check_bounds(label: str, count: int, constraint: Any) -> list[Finding]:
     if not constraint:
-        return [Finding(section, Status.UNKNOWN, f"期刊未规定{label}限制")]
+        return [Finding(SOURCE, Status.UNKNOWN, f"{label}: journal requirement unknown")]
     failures: list[str] = []
     if constraint.minimum is not None and count < constraint.minimum:
-        failures.append(f"少于最小值 {constraint.minimum}")
+        failures.append(f"below minimum {constraint.minimum}")
     if constraint.maximum is not None and count > constraint.maximum:
-        failures.append(f"超过最大值 {constraint.maximum}")
+        failures.append(f"above maximum {constraint.maximum}")
     if failures:
-        return [Finding(section, Status.FAIL, f"{label}为 {count}，{'；'.join(failures)}")]
-    return [Finding(section, Status.PASS, f"{label}为 {count}")]
+        return [Finding(SOURCE, Status.FAIL, f"{label}: {count} ({'; '.join(failures)})")]
+    if constraint.confidence == Confidence.unknown or constraint.source_kind == SourceKind.system_default:
+        return [Finding(SOURCE, Status.UNKNOWN, f"{label}: journal requirement unknown; observed {count} using ASC fallback unit `{constraint.unit}`")]
+    return [Finding(SOURCE, Status.PASS, f"{label}: {count} {constraint.unit}")]
+
+
+def _identity_values(meta: dict[str, Any], key: str) -> list[str]:
+    values: list[str] = []
+    direct = meta.get(key)
+    if direct:
+        values.append(str(direct))
+    for author in meta.get("authors") or []:
+        if isinstance(author, dict) and author.get(key):
+            values.append(str(author[key]))
+    return values
 
 
 def check_markdown(path: Path, profile: JournalProfile, root: Path, journal_dir: Path) -> list[Finding]:
     try:
         manuscript = parse_markdown(path)
     except Exception as exc:
-        return [Finding("Markdown", Status.FAIL, f"无法解析 Markdown：{exc}")]
+        return [Finding(SOURCE, Status.FAIL, f"Cannot parse Markdown: {exc}")]
 
     meta, body = manuscript.metadata, manuscript.body
     findings: list[Finding] = []
-    required = {
-        "title": "标题",
-        "authors": "作者",
-        "abstract": "摘要",
-        "keywords": "关键词",
-    }
-    for key, label in required.items():
-        findings.append(Finding("Metadata", Status.PASS if meta.get(key) else Status.FAIL, f"{label}{'已提供' if meta.get(key) else '缺失'}"))
+    for key, label in {"title": "Title", "authors": "Authors", "abstract": "Abstract", "keywords": "Keywords"}.items():
+        findings.append(Finding(SOURCE, Status.PASS if meta.get(key) else Status.FAIL, f"{label} {'present' if meta.get(key) else 'missing'}"))
     authors = meta.get("authors") or []
     has_affiliation = bool(meta.get("affiliations")) or any(isinstance(a, dict) and a.get("affiliation") for a in authors)
-    findings.append(Finding("Metadata", Status.PASS if has_affiliation else Status.FAIL, f"作者单位{'已提供' if has_affiliation else '缺失'}"))
-    if profile.funding.confidence != "unknown":
-        findings.append(Finding("Metadata", Status.PASS if meta.get("funding") else Status.WARNING, "基金信息已提供" if meta.get("funding") else "期刊规则涉及基金信息，但稿件未提供"))
+    findings.append(Finding(SOURCE, Status.PASS if has_affiliation else Status.FAIL, f"Affiliations {'present' if has_affiliation else 'missing'}"))
+    if profile.funding.confidence != Confidence.unknown:
+        findings.append(Finding(SOURCE, Status.PASS if meta.get("funding") else Status.WARNING, "Funding present" if meta.get("funding") else "Profile has a funding rule but manuscript has no funding metadata"))
 
-    abstract = meta.get("abstract")
-    if isinstance(abstract, dict):
-        for language, value in abstract.items():
-            findings.extend(_check_bounds("Content", f"{language} 摘要长度", _count_text(value, profile.abstract_count.unit if profile.abstract_count else "words"), profile.abstract_count))
-    else:
-        findings.extend(_check_bounds("Content", "摘要长度", _count_text(abstract, profile.abstract_count.unit if profile.abstract_count else "words"), profile.abstract_count))
-    findings.extend(_check_bounds("Content", "正文字数", _count_text(body, profile.word_count.unit if profile.word_count else "words"), profile.word_count))
+    abstract = meta.get("abstract") or {}
+    if not isinstance(abstract, dict):
+        abstract = {"zh": abstract}
+    for language in ("zh", "en"):
+        variant = getattr(profile.abstract, language)
+        findings.extend(_check_bounds(f"{language.upper()} abstract count", _count_text(abstract.get(language), variant.count.unit if variant.count else ("characters" if language == "zh" else "words")), variant.count))
+    findings.extend(_check_bounds("Body count", _count_text(body, profile.word_count.unit if profile.word_count else "words"), profile.word_count))
+
     keywords = meta.get("keywords") or {}
-    keyword_values = [item for values in keywords.values() for item in values] if isinstance(keywords, dict) else list(keywords)
-    findings.extend(_check_bounds("Content", "关键词数量", len(keyword_values), profile.keyword_count))
+    if not isinstance(keywords, dict):
+        keywords = {"zh": keywords}
+    for language in ("zh", "en"):
+        values = keywords.get(language) or []
+        variant = getattr(profile.keywords, language)
+        findings.extend(_check_bounds(f"{language.upper()} keywords count", _count_text(values, "items"), variant.count))
 
-    bibliography = Path(profile.citation.bibliography)
-    if not bibliography.is_absolute():
-        bibliography = root / bibliography
+    bibliography = resolve_profile_resource(root, journal_dir, profile.citation.bibliography)
     if not bibliography.exists():
-        findings.append(Finding("Citation", Status.FAIL, f"bibliography 不存在：{bibliography}"))
+        findings.append(Finding(CITATION, Status.FAIL, f"Bibliography missing: {bibliography}"))
         known: set[str] = set()
     else:
         try:
             known = bibliography_keys(bibliography)
-            findings.append(Finding("Citation", Status.PASS, f"bibliography 可读取，共 {len(known)} 条记录"))
+            findings.append(Finding(CITATION, Status.PASS, f"Bibliography readable with {len(known)} records"))
         except Exception as exc:
             known = set()
-            findings.append(Finding("Citation", Status.FAIL, f"bibliography 无法解析：{exc}"))
+            findings.append(Finding(CITATION, Status.FAIL, f"Bibliography cannot be parsed: {exc}"))
     cited = extract_citations(body)
     missing = sorted({citation.key for citation in cited if citation.key not in known})
-    findings.append(Finding("Citation", Status.FAIL if missing else Status.PASS, f"未解析 citekey：{', '.join(missing)}" if missing else f"全部 {len(cited)} 个引用标记均可解析"))
+    findings.append(Finding(CITATION, Status.FAIL if missing else Status.PASS, f"Unresolved citekeys: {', '.join(missing)}" if missing else f"All {len(cited)} citation markers resolve"))
     manual = re.findall(r"(?:\(|（)[A-Z\u3400-\u9fff][^()（）]{0,45}?\b(?:19|20)\d{2}[a-z]?(?:\)|）)", body)
-    findings.append(Finding("Citation", Status.WARNING if manual else Status.PASS, f"发现 {len(manual)} 处疑似手写作者年份引用" if manual else "未发现明显手写作者年份引用"))
+    findings.append(Finding(CITATION, Status.WARNING if manual else Status.PASS, f"Found {len(manual)} possible manually formatted author-year citations" if manual else "No obvious manually formatted author-year citations"))
 
-    csl_path = journal_dir / profile.citation.csl
+    csl_path = resolve_profile_resource(root, journal_dir, profile.citation.csl)
     if not csl_path.exists():
-        findings.append(Finding("Citation", Status.FAIL, f"CSL 不存在：{csl_path}"))
+        findings.append(Finding(CITATION, Status.FAIL, f"CSL missing: {csl_path}"))
     else:
         reasons = csl_m_reasons(csl_path)
-        findings.append(Finding("Citation", Status.WARNING if reasons else Status.PASS, "检测到 CSL-M 扩展；static 模式默认拒绝构建并建议 Zotero live mode" if reasons else "CSL 未检测到 CSL-M 专用标记"))
+        findings.append(Finding(CITATION, Status.WARNING if reasons else Status.PASS, "CSL-M extensions detected; static mode requires explicit override" if reasons else "No CSL-M-only markers detected"))
 
-    embeds = embed_targets(body)
-    for target in embeds:
-        candidate = (path.parent / target).resolve()
-        findings.append(Finding("Markdown", Status.PASS if candidate.exists() else Status.FAIL, f"嵌入文件{'存在' if candidate.exists() else '缺失'}：{target}"))
-    note_embeds = [target for target in embeds if Path(target).suffix.lower() not in {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"}]
-    if note_embeds:
-        findings.append(Finding("Markdown", Status.WARNING, "Obsidian note embed 仅展开图片；笔记嵌入当前保留为可见提示"))
-    else:
-        findings.append(Finding("Markdown", Status.PASS, "未发现无法处理的 Obsidian note embed"))
+    for target in embed_targets(body):
+        candidates = attachment_candidates(path, target, root, profile.obsidian.attachment_paths)
+        if len(candidates) > 1:
+            findings.append(Finding(SOURCE, Status.FAIL, f"AMBIGUOUS attachment `{target}`: {', '.join(str(item) for item in candidates)}"))
+        else:
+            findings.append(Finding(SOURCE, Status.PASS if candidates else Status.FAIL, f"Attachment {'resolved' if candidates else 'missing'}: {target}"))
+    note_embeds = [target for target in embed_targets(body) if Path(target).suffix.lower() not in {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"}]
+    findings.append(Finding(SOURCE, Status.WARNING if note_embeds else Status.PASS, "Note embeds remain visible placeholders" if note_embeds else "No unsupported note embeds"))
 
     if profile.anonymous_review.required:
-        leaks = []
-        if meta.get("authors"):
-            leaks.append("作者")
-        if has_affiliation:
-            leaks.append("单位")
-        if meta.get("funding"):
-            leaks.append("基金")
-        findings.append(Finding("Anonymous review", Status.WARNING if leaks else Status.PASS, f"源稿含可识别元数据（构建时会隐藏，不修改源稿）：{', '.join(leaks)}" if leaks else "未发现显式身份元数据"))
+        leaks: list[str] = []
+        checks = [
+            (profile.anonymous_review.hide_authors and bool(meta.get("authors")), "authors"),
+            (profile.anonymous_review.hide_affiliations and has_affiliation, "affiliations"),
+            (profile.anonymous_review.hide_funding and bool(meta.get("funding")), "funding"),
+            (profile.anonymous_review.hide_email and bool(_identity_values(meta, "email")), "email"),
+            (profile.anonymous_review.hide_orcid and bool(_identity_values(meta, "orcid")), "ORCID"),
+            (profile.anonymous_review.hide_correspondence and bool(meta.get("correspondence")), "correspondence"),
+            (profile.anonymous_review.hide_acknowledgements and bool(meta.get("acknowledgements")), "acknowledgements"),
+        ]
+        leaks = [name for present, name in checks if present]
+        findings.append(Finding(ANONYMOUS, Status.WARNING if leaks else Status.PASS, f"Source contains identity data that the anonymous build must remove: {', '.join(leaks)}" if leaks else "No configured identity fields found in source"))
     else:
-        status = Status.UNKNOWN if profile.anonymous_review.confidence == "unknown" else Status.PASS
-        message = "期刊未说明是否匿名审稿" if status == Status.UNKNOWN else "该 profile 明确不要求匿名审稿"
-        findings.append(Finding("Anonymous review", status, message))
+        unknown = profile.anonymous_review.confidence == Confidence.unknown
+        findings.append(Finding(ANONYMOUS, Status.UNKNOWN if unknown else Status.PASS, "Journal anonymous-review requirement unknown; no anonymization applied" if unknown else "Profile explicitly does not require anonymous review"))
+
+    if profile.profile_status != ProfileStatus.approved:
+        findings.append(Finding(PROFILE, Status.FAIL, f"Profile status is `{profile.profile_status.value}`; build requires `approved`"))
     for conflict in profile.conflicts():
-        findings.append(Finding("Profile", Status.FAIL, f"CONFLICT：{conflict} 存在多个候选值，须人工确认"))
+        findings.append(Finding(PROFILE, Status.FAIL, f"CONFLICT: {conflict} has multiple candidates"))
+    for unsupported in profile.unsupported_configured():
+        findings.append(Finding(PROFILE, Status.FAIL, f"Profile field `{unsupported}` is configured, but ASC 0.2.0 does not implement this rule", rule_path=unsupported))
+    unknown_rules = profile.unknown_rules()
+    if unknown_rules:
+        findings.append(Finding(PROFILE, Status.UNKNOWN, f"{len(unknown_rules)} journal requirements remain unknown; configured system fallbacks are not journal compliance: {', '.join(unknown_rules)}"))
+    else:
+        findings.append(Finding(PROFILE, Status.PASS, "No unknown journal requirements or system fallbacks"))
     return findings
 
 
-def overall_status(findings: list[Finding]) -> Status:
-    statuses = {finding.status for finding in findings}
-    if Status.FAIL in statuses:
-        return Status.FAIL
-    if Status.WARNING in statuses:
-        return Status.WARNING
-    if Status.UNKNOWN in statuses:
-        return Status.UNKNOWN
-    return Status.PASS
-
-
-def render_report(profile: JournalProfile, findings: list[Finding]) -> str:
-    symbols = {Status.PASS: "✓", Status.WARNING: "△", Status.FAIL: "✗", Status.UNKNOWN: "?"}
-    lines = ["# Submission Compliance", "", f"Journal: {profile.journal.name}", "", f"Overall: **{overall_status(findings).value}**", ""]
-    sections: list[str] = []
-    for finding in findings:
-        if finding.section not in sections:
-            sections.append(finding.section)
-    for section in sections:
-        lines.extend([f"## {section}", ""])
-        for finding in (item for item in findings if item.section == section):
-            lines.append(f"- {symbols[finding.status]} **{finding.status.value}** {finding.message}")
-        lines.append("")
-    return "\n".join(lines)
+__all__ = ["Finding", "Status", "check_markdown", "overall_status", "render_report"]

@@ -2,7 +2,9 @@
 
 Academic Submission Compiler 把一份语义化 Markdown 母版编译为不同期刊要求的 DOCX，并同时生成可追溯的合规报告。项目的原则是 **Write semantically. Compile typographically.** 写作时维护内容和语义，投稿格式在编译阶段由确定性代码完成。
 
-当前版本完成 Phase 1 MVP：正式 Journal Profile schema、Pandoc static citation、`reference.docx`、中文和 Latin 字体分离、DOCX post-formatter、构建前和构建后检查、期刊切换、Windows 路径测试、虚构演示稿和测试套件。AI intake 提供 provider-neutral 接口和 TXT/Markdown 规则提取器；Zotero Live Mode 已接入 Better BibTeX 官方 Lua filter，但仍标记为 experimental。
+当前版本是 **0.2.0 Contract Hardening**。`asc build` 已形成 Markdown preflight → Pandoc → DOCX formatter → DOCX inspector → unified compliance report 的闭环。Profile 中的可执行规则必须被 formatter 与 inspector 消费；暂未实现的字段会阻止构建，未知规则与系统 fallback 不会冒充期刊合规。
+
+已实现：Profile 2.0、静态引用、双语摘要/关键词规则、标签与正文字符样式、独立语言计数、安全输出命名、匿名字段控制、实际段落/run/脚注/参考文献检查和 Windows CI。实验性功能：Better BibTeX Zotero Live Mode 与确定性 TXT/Markdown intake。计划功能：真实 LLM、PDF/DOCX 投稿指南识别、GUI 和期刊数据库。
 
 ## 工作流
 
@@ -52,7 +54,9 @@ asc build examples/demo-paper/paper.md --journal journal-b
 
 仓库内可直接验证两个虚构 profile：`example-humanities-journal` 使用 12pt 宋体正文和 25.4/31.7mm 页边距，`example-compact-journal` 使用 10.5pt 仿宋正文和 20/25mm 页边距。
 
-编译器不修改 `paper.md`。中间 DOCX 写入系统临时目录，最终文件进入 `dist/`。
+编译器不修改 `paper.md`。中间 DOCX 写入系统临时目录，最终文件进入 `dist/`。`build` 已自动运行 post-build inspection；`inspect` 保留为独立调试命令。
+
+构建报告固定包含 Source / Markdown Compliance、Citation Compliance、DOCX Formatting Compliance、Anonymous Review、Profile / Unknown Rules 与 Profile Coverage。只要实际 DOCX 有一项 FAIL，最终状态就是 FAIL，即使源稿 preflight 已通过。
 
 ## Static Mode 与 Zotero Live Mode
 
@@ -62,7 +66,7 @@ Static Mode 使用 Pandoc citeproc、bibliography 和 journal CSL。它最适合
 asc build paper.md --journal journal-id
 ```
 
-Live Mode 使用 Better BibTeX 官方 `zotero.lua` 生成 Word 中可刷新的 Zotero citation fields，适合导师批改、合作者协作和返修阶段。它要求 Zotero 与 Better BibTeX 正在运行；preflight 失败时不会生成半成品。
+Live Mode 使用 Better BibTeX 官方 `zotero.lua` 生成 Word 中可刷新的 Zotero citation fields，适合导师批改、合作者协作和返修阶段。它要求 Zotero 与 Better BibTeX 正在运行；preflight 失败时不会生成半成品。未指定模式时使用 `citation.default_mode`；`--static` 与 `--live-zotero` 可显式覆盖 Profile。
 
 ```powershell
 asc build paper.md --journal journal-id --live-zotero
@@ -79,7 +83,9 @@ CSL 决定引用和参考文献内容如何呈现；`reference.docx` 决定 Word
 
 ## Journal Profile
 
-正式 schema 位于 `schemas/journal-profile.schema.json`，Pydantic source model 位于 `src/asc/models.py`。字体分别保存 `east_asia` 与 `latin`，字号同时保存中文名与 pt。每条 explicit/inferred 规则必须含 `source` 和 `evidence`；无依据的规则保持 `unknown`。多个来源冲突时保留 `candidates`，approval 和 build 都拒绝未解决冲突。
+正式 schema 位于 `schemas/journal-profile.schema.json`，Pydantic source model 位于 `src/asc/models.py`，执行覆盖见 `docs/profile-capability-matrix.md`。Profile 2.0 用 `source_kind` 区分 journal、template、inferred、system_default 与 user_override，并保存 generated/reviewed/approved 状态。每条 explicit/inferred/user_confirmed 规则必须含 provenance；无依据的规则保持 unknown。多个来源冲突时保留 candidates，approval 和 build 都拒绝未解决冲突。
+
+摘要和关键词按 `zh`/`en` 分开，每种语言分别包含 `label`、`body`、`count`，关键词另有 `separator`。因此“摘要：”与摘要正文、“关键词：”与关键词内容可以使用不同字符样式；中文可按 characters、英文可按 words、关键词按 items 独立计数。
 
 新增期刊的无 AI 流程是复制示例目录、手写 `profile.yaml`、放入 CSL 与 `reference.docx`，再运行 `asc journal inspect journal-id`。也可以先创建待审 profile：
 
@@ -89,6 +95,14 @@ asc journal inspect my-journal
 asc journal approve my-journal
 asc journal reference my-journal
 ```
+
+`asc journal approve` 默认拒绝仍含 unknown 的生成 Profile；人工接受未知项时必须显式使用 `--allow-unknown`。Profile 1.0 可继续读取，并可用以下命令持久化迁移：
+
+```powershell
+python scripts/migrate_profile.py journals/my-journal/profile.yaml
+```
+
+`output.filename_pattern` 支持 `{manuscript}`、`{journal}`、`{journal_id}` 和 `{mode}`，并拒绝路径穿越、Windows 非法名称、空结果和重复 `.docx`。
 
 `journal create` 只生成 `profile.generated.yaml` 和 `profile-review.md`，不会静默批准。MVP intake 支持 TXT/Markdown；PDF、DOCX、HTML adapter 已留接口但尚未启用。
 

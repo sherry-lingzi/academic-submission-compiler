@@ -7,6 +7,7 @@ import platform
 import shutil
 import subprocess
 import sys
+from datetime import datetime, timezone
 
 from pydantic import ValidationError
 
@@ -15,8 +16,8 @@ from asc.compiler import build
 from asc.compliance import Status, check_markdown, overall_status, render_report
 from asc.docx import generate_reference_docx, inspect_docx
 from asc.intake import TextRuleExtractor, create_generated_profile
-from asc.models import JournalProfile, load_profile
-from asc.paths import find_project_root, resolve_journal
+from asc.models import JournalProfile, ProfileStatus, dump_profile, load_profile
+from asc.paths import find_project_root, resolve_journal, resolve_profile_resource
 
 
 def _root() -> Path:
@@ -66,18 +67,19 @@ def build_command(args: argparse.Namespace) -> int:
     result = build(Path(args.manuscript), args.journal, _root(), args.live_zotero, args.allow_csl_m)
     print(f"DOCX: {result.docx}")
     print(f"REPORT: {result.report}")
-    print(f"STATUS: {result.findings_status.value}")
-    return 0
+    print(f"STATUS: {result.final_status.value}")
+    return 1 if result.final_status == Status.FAIL else 0
 
 
 def inspect_command(args: argparse.Namespace) -> int:
     root = _root()
     _, profile_path = resolve_journal(root, args.journal)
     findings = inspect_docx(Path(args.docx).resolve(), load_profile(profile_path))
+    symbols = {Status.PASS: "✓", Status.WARNING: "△", Status.FAIL: "✗", Status.UNKNOWN: "?"}
     for item in findings:
-        symbol = "✓" if item.ok else "✗"
-        print(f"{symbol} {item.label}: expected {item.expected}; detected {item.detected}")
-    return 0 if all(item.ok for item in findings) else 1
+        detail = f"; expected {item.expected}; detected {item.detected}" if item.expected is not None or item.detected is not None else ""
+        print(f"{symbols[item.status]} {item.status.value} {item.message}{detail}")
+    return 1 if overall_status(findings) == Status.FAIL else 0
 
 
 def journal_list_command(_: argparse.Namespace) -> int:
@@ -118,7 +120,12 @@ def journal_approve_command(args: argparse.Namespace) -> int:
     profile = load_profile(generated)
     if profile.conflicts():
         raise RuntimeError(f"cannot approve unresolved conflicts: {', '.join(profile.conflicts())}")
-    shutil.copy2(generated, journal_dir / "profile.yaml")
+    unknown = profile.unknown_rules()
+    if unknown and not args.allow_unknown:
+        raise RuntimeError(f"Cannot approve: {len(unknown)} unknown journal requirements remain. Run `asc journal inspect {args.id}` or explicitly use `asc journal approve {args.id} --allow-unknown`")
+    profile.profile_status = ProfileStatus.approved
+    profile.approved_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    dump_profile(profile, journal_dir / "profile.yaml")
     print(journal_dir / "profile.yaml")
     return 0
 
@@ -128,6 +135,8 @@ def journal_inspect_command(args: argparse.Namespace) -> int:
     profile_path = journal_dir / ("profile.yaml" if (journal_dir / "profile.yaml").exists() else "profile.generated.yaml")
     profile = load_profile(profile_path)
     print(json.dumps(profile.model_dump(mode="json", exclude_none=True), ensure_ascii=False, indent=2))
+    coverage = profile.coverage()
+    print(f"COVERAGE explicit={coverage['explicit']} inferred={coverage['inferred']} user_confirmed={coverage['user_confirmed']} unknown={len(profile.unknown_rules())} system_default={coverage['system_default']} unsupported={coverage['unsupported']} conflict={coverage['conflict']}")
     if profile.conflicts():
         print(f"CONFLICT: {', '.join(profile.conflicts())}")
         return 1
@@ -137,7 +146,7 @@ def journal_inspect_command(args: argparse.Namespace) -> int:
 def journal_reference_command(args: argparse.Namespace) -> int:
     journal_dir, profile_path = resolve_journal(_root(), args.id)
     profile = load_profile(profile_path)
-    target = journal_dir / profile.output.reference_docx
+    target = resolve_profile_resource(_root(), journal_dir, profile.output.reference_docx)
     generate_reference_docx(target, profile)
     print(target)
     return 0
@@ -155,7 +164,10 @@ def parser() -> argparse.ArgumentParser:
     build_parser = commands.add_parser("build", help="compile DOCX and compliance report")
     build_parser.add_argument("manuscript")
     build_parser.add_argument("--journal", required=True)
-    build_parser.add_argument("--live-zotero", action="store_true")
+    mode = build_parser.add_mutually_exclusive_group()
+    mode.add_argument("--live-zotero", dest="live_zotero", action="store_const", const=True)
+    mode.add_argument("--static", dest="live_zotero", action="store_const", const=False)
+    build_parser.set_defaults(live_zotero=None)
     build_parser.add_argument("--allow-csl-m", action="store_true", help="explicitly accept Pandoc citeproc risk")
     build_parser.set_defaults(handler=build_command)
     inspect = commands.add_parser("inspect", help="inspect generated DOCX formatting")
@@ -173,6 +185,7 @@ def parser() -> argparse.ArgumentParser:
     create.set_defaults(handler=journal_create_command)
     approve = journal_commands.add_parser("approve")
     approve.add_argument("id")
+    approve.add_argument("--allow-unknown", action="store_true")
     approve.set_defaults(handler=journal_approve_command)
     journal_inspect = journal_commands.add_parser("inspect")
     journal_inspect.add_argument("id")
