@@ -207,7 +207,19 @@ def build(manuscript: Path, journal_id: str, root: Path, live_zotero: bool | Non
     with tempfile.TemporaryDirectory(prefix="asc-build-") as temporary:
         intermediate = Path(temporary) / "intermediate.docx"
         command = pandoc_command(root, manuscript, journal_dir, profile, intermediate, use_live)
-        completed = subprocess.run(command, cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace")
+        pandoc_env = os.environ.copy()
+        # Pandoc is a GHC executable.  On English Windows runners its locale
+        # encoding can otherwise reject perfectly valid CJK path arguments.
+        pandoc_env["GHC_CHARENC"] = "UTF-8"
+        completed = subprocess.run(
+            command,
+            cwd=root,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            env=pandoc_env,
+        )
         if completed.returncode:
             raise RuntimeError(f"Pandoc 构建失败：\n{completed.stderr.strip() or completed.stdout.strip()}")
         if use_live:
