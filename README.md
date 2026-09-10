@@ -36,6 +36,23 @@ py -m venv .venv
 
 Better BibTeX 推荐把 Zotero collection 自动导出为 `bibliography/references.json`，格式选择 Better CSL JSON 并启用 Keep updated。BibTeX/BibLaTeX 仍可用，但 CSL JSON 避免了来回映射造成的信息损失。
 
+## 支持的文件格式
+
+| 用途 | 格式 | 支持状态 | 说明 |
+| --- | --- | --- | --- |
+| 论文母版 | `.md` | 已支持 | UTF-8 或 UTF-8 BOM；支持 YAML front matter、Pandoc citations、脚注、标题、表格、普通 Markdown 图片和 Obsidian wikilink/embed 语法。Markdown 始终是正文唯一母版。 |
+| Journal Profile | `.yaml` | 已支持 | 使用 Profile 2.0 schema；正式文件名为 `profile.yaml`，生成后待审文件为 `profile.generated.yaml`。 |
+| 文献数据库 | `.json` | 已支持、推荐 | CSL JSON / Better CSL JSON；静态模式不依赖正在运行的 Zotero。 |
+| 文献数据库 | `.bib` | 已支持 | BibTeX 或 BibLaTeX；由 Pandoc citeproc 编译，ASC 同时检查 citekey。 |
+| 引用样式 | `.csl` | 已支持 | 标准 CSL 用于静态模式；检测到 CSL-M 专用标记时默认拒绝静默编译，可人工核验后使用 `--allow-csl-m`。 |
+| Word 样式模板 | `.docx` | 已支持 | `reference.docx` 提供 Pandoc 样式基础；ASC 随后确定性校正并检查实际 DOCX。 |
+| 图片附件 | `.png`, `.jpg`, `.jpeg`, `.gif`, `.svg`, `.webp` | 已支持 | 可从稿件目录、`obsidian.attachment_paths` 或 vault-relative 精确路径解析；同名多匹配会报告 `AMBIGUOUS`。 |
+| 投稿指南 intake | `.txt`, `.md` | 实验性 | 当前仅提取少量明确书写的格式规则，生成的 Profile 必须人工检查和批准。 |
+| 投稿成品 | `.docx` | 已支持 | static 和 Zotero Live 两种模式；Live 输出默认增加 `-live.docx`，避免覆盖静态成品。 |
+| 合规报告 | `.md` | 已支持 | 与 DOCX 同名生成 `*-report.md`，包含源稿、引用、实际 DOCX、匿名审稿和 Profile Coverage。 |
+
+当前不支持把 `.docx`、`.pdf` 或 `.html` 当作论文母版，也不输出 PDF、LaTeX 或 HTML 投稿成品。PDF/DOCX/HTML 投稿指南解析仍是计划功能；普通笔记 wikilink 可保留为文本，但递归展开 Obsidian 笔记 embed 尚未实现。
+
 ## 示例
 
 ```powershell
@@ -123,7 +140,8 @@ formatter 同时写入 OOXML `w:ascii`、`w:hAnsi`、`w:eastAsia` 和 `w:cs`。�
 - Live Mode 的代码路径和 upstream filter 已集成，但没有运行中的 Zotero + Better BibTeX 就无法端到端验证。
 - TXT/Markdown intake 只识别少量明确格式规则；它不会假装理解所有自然语言投稿指南。
 - 图片 embed 可转换；递归笔记 embed 目前只输出提示。
-- DOCX inspection 目前覆盖主要 style 和页边距，不检查 Word 实际字体 fallback、页眉页脚或每一个局部 direct-formatting run。
+- DOCX inspection 已检查样式、实际段落/run、脚注 OOXML、参考文献段落、页边距和匿名信息，但无法验证 Word 在特定电脑上最终选择的字体 fallback 或自动分页后的视觉效果。
+- 复杂文字字体、文本颜色、同时输出中英文双标题和正文致谢章节推断仍是 partial；具体边界见能力矩阵。
 - PDF/DOCX/HTML 投稿指南解析、真实 LLM provider 和交互式冲突合并属于 Phase 2。
 
 项目采用 MIT License。示例期刊明确为虚构测试用途。
