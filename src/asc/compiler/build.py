@@ -42,6 +42,68 @@ def _utf8_console_for_pandoc():
             kernel32.SetConsoleOutputCP(original_output)
 
 
+def _has_non_ascii(value: str | Path) -> bool:
+    try:
+        str(value).encode("ascii")
+    except UnicodeEncodeError:
+        return True
+    return False
+
+
+def _windows_ascii_runtime(command: list[str], cwd: Path, stage: Path) -> tuple[list[str], Path]:
+    """Alias Unicode Windows paths so older GHC runtimes never encode them."""
+    if os.name != "nt":
+        return command, cwd
+
+    aliases: dict[Path, Path] = {}
+
+    def alias_directory(value: str | Path) -> Path:
+        target = Path(value).resolve()
+        if not _has_non_ascii(target):
+            return target
+        if target in aliases:
+            return aliases[target]
+        alias = stage / f"dir-{len(aliases)}"
+        completed = subprocess.run(
+            ["cmd.exe", "/d", "/c", "mklink", "/J", str(alias), str(target)],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        if completed.returncode:
+            raise RuntimeError(f"无法为 Pandoc 创建安全的 Windows 路径别名：{target}")
+        aliases[target] = alias
+        return alias
+
+    def alias_file(value: str) -> str:
+        path = Path(value)
+        parent = alias_directory(path.parent)
+        if not _has_non_ascii(path.name):
+            return str(parent / path.name)
+        inputs = stage / "files"
+        inputs.mkdir(exist_ok=True)
+        copied = inputs / f"input-{len(list(inputs.iterdir()))}{path.suffix}"
+        shutil.copy2(path, copied)
+        return str(copied)
+
+    runtime = list(command)
+    runtime_cwd = alias_directory(cwd)
+    runtime[1] = alias_file(runtime[1])
+    file_prefixes = ("--lua-filter=", "--reference-doc=", "--bibliography=", "--csl=")
+    for index, argument in enumerate(runtime):
+        if argument.startswith("--resource-path="):
+            values = argument.partition("=")[2].split(os.pathsep)
+            runtime[index] = "--resource-path=" + os.pathsep.join(str(alias_directory(value)) for value in values)
+            continue
+        for prefix in file_prefixes:
+            if argument.startswith(prefix):
+                runtime[index] = prefix + alias_file(argument[len(prefix) :])
+                break
+    return runtime, runtime_cwd
+
+
 @dataclass(frozen=True)
 class BuildResult:
     source_findings: tuple[Finding, ...]
@@ -228,16 +290,18 @@ def build(manuscript: Path, journal_id: str, root: Path, live_zotero: bool | Non
     manuscript_data = parse_markdown(manuscript)
     citekeys = {item.key for item in extract_citations(manuscript_data.body)}
     with tempfile.TemporaryDirectory(prefix="asc-build-") as temporary:
-        intermediate = Path(temporary) / "intermediate.docx"
+        temporary_path = Path(temporary)
+        intermediate = temporary_path / "intermediate.docx"
         command = pandoc_command(root, manuscript, journal_dir, profile, intermediate, use_live)
+        runtime_command, runtime_cwd = _windows_ascii_runtime(command, root, temporary_path)
         pandoc_env = os.environ.copy()
         # Pandoc is a GHC executable.  On English Windows runners its locale
         # encoding can otherwise reject perfectly valid CJK path arguments.
         pandoc_env["GHC_CHARENC"] = "UTF-8"
         with _utf8_console_for_pandoc():
             completed = subprocess.run(
-                command,
-                cwd=root,
+                runtime_command,
+                cwd=runtime_cwd,
                 capture_output=True,
                 text=True,
                 encoding="utf-8",

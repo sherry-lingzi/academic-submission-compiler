@@ -102,7 +102,10 @@ def test_custom_keyword_separators_reach_docx(tmp_path: Path, root: Path):
     profile.keywords.en.separator = " | "
     profile.keywords.en.separator_source_kind = SourceKind.user_override
     dump_profile(profile, journal / "profile.yaml")
-    result = build(project / "examples/demo-paper/paper.md", "separator-test", project, live_zotero=False)
+    paper = project / "examples/demo-paper/paper.md"
+    chinese_paper = paper.with_name("中文 稿件.md")
+    paper.rename(chinese_paper)
+    result = build(chinese_paper, "separator-test", project, live_zotero=False)
     assert result.final_status != Status.FAIL
     text = "\n".join(paragraph.text for paragraph in Document(result.docx).paragraphs)
     assert "学术写作，可复现工作流，文档编译" in text
