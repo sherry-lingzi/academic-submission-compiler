@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import dataclass
 import os
 from pathlib import Path
@@ -17,6 +18,28 @@ from asc.findings import Finding, Status, overall_status, render_report
 from asc.models import JournalProfile, ProfileStatus, load_profile
 from asc.markdown import extract_citations, parse_markdown
 from asc.paths import resolve_journal, resolve_profile_resource
+
+
+@contextmanager
+def _utf8_console_for_pandoc():
+    """Give GHC/Pandoc a UTF-8 Windows console and restore it afterwards."""
+    if os.name != "nt":
+        yield
+        return
+    import ctypes
+
+    kernel32 = ctypes.windll.kernel32
+    original_input = kernel32.GetConsoleCP()
+    original_output = kernel32.GetConsoleOutputCP()
+    changed_input = bool(kernel32.SetConsoleCP(65001))
+    changed_output = bool(kernel32.SetConsoleOutputCP(65001))
+    try:
+        yield
+    finally:
+        if changed_input and original_input:
+            kernel32.SetConsoleCP(original_input)
+        if changed_output and original_output:
+            kernel32.SetConsoleOutputCP(original_output)
 
 
 @dataclass(frozen=True)
@@ -211,15 +234,16 @@ def build(manuscript: Path, journal_id: str, root: Path, live_zotero: bool | Non
         # Pandoc is a GHC executable.  On English Windows runners its locale
         # encoding can otherwise reject perfectly valid CJK path arguments.
         pandoc_env["GHC_CHARENC"] = "UTF-8"
-        completed = subprocess.run(
-            command,
-            cwd=root,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            env=pandoc_env,
-        )
+        with _utf8_console_for_pandoc():
+            completed = subprocess.run(
+                command,
+                cwd=root,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                env=pandoc_env,
+            )
         if completed.returncode:
             raise RuntimeError(f"Pandoc 构建失败：\n{completed.stderr.strip() or completed.stdout.strip()}")
         if use_live:
